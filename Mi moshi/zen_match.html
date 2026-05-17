@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Zen Match</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: #0e1318;
+      overflow: hidden;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+
+    #game {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100dvh;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    #topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px 8px;
+      background: #0e1318;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      flex-shrink: 0;
+      gap: 6px;
+    }
+
+    .tb-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+
+    .tb-lbl {
+      font-size: 9px;
+      color: #445a40;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .tb-val {
+      font-size: 20px;
+      font-weight: bold;
+      color: #c8d8b0;
+      letter-spacing: 1px;
+    }
+
+    #game-title {
+      font-size: 14px;
+      color: #7a9a68;
+      letter-spacing: 4px;
+      font-weight: normal;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    #btn-row {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+    }
+
+    .btn-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      color: #8aaa78;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: Georgia, serif;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+
+    .btn-pill:active {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    #slot-area {
+      padding: 7px 10px 5px;
+      background: #0a1010;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+
+    #slot-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    #slot-lbl {
+      font-size: 9px;
+      color: #344a30;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    #slot-count {
+      font-size: 9px;
+      color: #5a7a50;
+    }
+
+    #slot-cells {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .sc {
+      width: 48px;
+      height: 68px;
+      border-radius: 8px;
+      border: 1.5px dashed rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.02);
+      transition: border-color 0.3s;
+    }
+
+    .sc.occ {
+      border-color: rgba(200, 216, 176, 0.3);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    #danger-track {
+      height: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 2px;
+      margin-top: 5px;
+    }
+
+    #danger-fill {
+      height: 3px;
+      width: 0%;
+      border-radius: 2px;
+      background: #4a9060;
+      transition: width 0.35s, background 0.35s;
+    }
+
+    #board-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #board {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* TILES */
+    .tile {
+      position: absolute;
+      width: 66px;
+      height: 94px;
+      border-radius: 10px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      cursor: pointer;
+      user-select: none;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.65), 0 1px 3px rgba(0, 0, 0, 0.45);
+      transition: transform 0.1s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tile-emoji {
+      font-size: 30px;
+      line-height: 1;
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+
+    .tile-name {
+      font-size: 8px;
+      color: #555;
+      letter-spacing: 0.3px;
+      pointer-events: none;
+      text-align: center;
+      padding: 0 3px;
+      white-space: nowrap;
+    }
+
+    .tile.free:active {
+      transform: scale(0.91) translateY(-3px);
+    }
+
+    .tile.locked {
+      cursor: default;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    .tile.locked::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      background: rgba(20, 30, 20, 0.54);
+      pointer-events: none;
+    }
+
+    .tile.slot-tile {
+      position: relative;
+      width: 46px;
+      height: 66px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .tile.slot-tile .tile-emoji {
+      font-size: 22px;
+    }
+
+    .tile.slot-tile .tile-name {
+      font-size: 7px;
+    }
+
+    @keyframes popOut {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.3);
+      }
+
+      100% {
+        transform: scale(0);
+        opacity: 0;
+      }
+    }
+
+    @keyframes tileIn {
+      from {
+        opacity: 0;
+        transform: scale(0.82);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes hintPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.65);
+      }
+
+      50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 15px 6px rgba(255, 250, 150, 0.85), 0 3px 10px rgba(0, 0, 0, 0.65);
+      }
+    }
+
+    @keyframes comboAnim {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.4);
+      }
+
+      35% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.15);
+      }
+
+      70% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -62%) scale(0.9);
+      }
+    }
+
+    @keyframes shakeX {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      20% {
+        transform: translateX(-7px);
+      }
+
+      40% {
+        transform: translateX(7px);
+      }
+
+      60% {
+        transform: translateX(-5px);
+      }
+
+      80% {
+        transform: translateX(5px);
+      }
+    }
+
+    .tile.matched {
+      animation: popOut 0.38s ease forwards !important;
+      pointer-events: none;
+    }
+
+    .tile.hint-glow {
+      animation: hintPulse 0.6s ease 3 !important;
+      z-index: 9999 !important;
+    }
+
+    .tile.tile-in {
+      animation: tileIn 0.22s ease forwards;
+    }
+
+    #combo-msg {
+      position: fixed;
+      top: 38%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      font-size: 26px;
+      font-weight: bold;
+      color: #fff;
+      pointer-events: none;
+      z-index: 8900;
+      letter-spacing: 3px;
+      text-align: center;
+      text-shadow: 0 0 18px rgba(180, 230, 140, 0.9), 0 2px 0 rgba(0, 0, 0, 0.8);
+      background: rgba(20, 40, 20, 0.72);
+      border: 1.5px solid rgba(160, 220, 120, 0.45);
+      border-radius: 24px;
+      padding: 10px 28px;
+      backdrop-filter: blur(2px);
+      white-space: nowrap;
+    }
+
+    .combo-show {
+      animation: comboAnim 1.1s ease forwards;
+    }
+
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 10, 0.93);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    #ov-box {
+      background: #0c1710;
+      border: 1px solid rgba(138, 170, 120, 0.28);
+      border-radius: 18px;
+      padding: 28px 22px;
+      text-align: center;
+      width: 88%;
+      max-width: 320px;
+      position: relative;
+    }
+
+    #ov-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: #6a8060;
+      font-size: 18px;
+      cursor: pointer;
+      display: none;
+    }
+
+    #ov-close:active {
+      color: #c8d8b0;
+    }
+
+    #ov-icon {
+      font-size: 46px;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    #ov-title {
+      font-size: 20px;
+      color: #c8d8b0;
+      font-weight: normal;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    #ov-msg {
+      font-size: 13px;
+      color: #6a8060;
+      line-height: 1.8;
+      margin-bottom: 22px;
+      white-space: pre-wrap;
+    }
+
+    #ov-btn {
+      background: rgba(138, 170, 120, 0.14);
+      border: 1px solid rgba(138, 170, 120, 0.38);
+      color: #c8d8b0;
+      padding: 14px;
+      border-radius: 30px;
+      font-size: 15px;
+      cursor: pointer;
+      width: 100%;
+      font-family: Georgia, serif;
+      letter-spacing: 1px;
+    }
+
+    #ov-btn:active {
+      background: rgba(138, 170, 120, 0.28);
+    }
+
+    #ov-tip {
+      font-size: 11px;
+      color: #354a2e;
+      margin-top: 14px;
+      font-style: italic;
+      line-height: 1.65;
+    }
+
+   
+    
+
+    .tile.gold {
+      background: linear-gradient(135deg, #fffdee, #fff099);
+      border: 1.5px solid #ffcc00;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.65), 0 0 12px rgba(255, 200, 0, 0.6) !important;
+    }
+
+    .tile.gold .tile-name {
+      color: #754;
+      font-weight: bold;
+    }
+
+    .gold-glow {
+      animation: goldPulse 1.5s infinite;
+    }
+
+    @keyframes goldPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.65), 0 0 8px rgba(255, 200, 0, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.65), 0 0 16px rgba(255, 220, 0, 0.8);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game">
+    
+    <div id="topbar"
+      style="flex-direction: column; gap: 8px; align-items: stretch; padding: 12px 14px 10px; z-index: 10;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="btn-pill" onclick="window.location.href='index.html'" title="Volver al inicio">inicio</button>
+          <div class="tb-col"><span class="tb-lbl">Nivel</span><span class="tb-val" id="lv-val">1</span> </div>
+        </div>
+
+        <div id="game-title" style="margin-bottom:0; font-size:16px;">ZEN MATCH</div>
+
+        <div class="tb-col"><span class="tb-lbl">Puntos</span><span class="tb-val" id="sc-val">0</span></div>
+      </div>
+
+      <div id="btn-row" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+        <button class="btn-pill" id="snd-btn" onclick="toggleSound()">♪ OFF</button>
+        <button class="btn-pill" onclick="useHint()">💡 Pista (<span id="hint-ct">3</span>)</button>
+        <button class="btn-pill" onclick="useUndo()">↩️ Deshacer (<span id="undo-ct">3</span>)</button>
+        <button class="btn-pill" onclick="confirmRestart()">↺ Reiniciar</button>
+      </div>
+    </div>
+
+    <div id="slot-area">
+      <div id="slot-meta"><span id="slot-lbl">Zona de emparejamiento</span><span id="slot-count">0 / 7</span></div>
+      <div id="slot-cells"></div>
+      <div id="danger-track">
+        <div id="danger-fill"></div>
+      </div>
+    </div>
+
+    <div id="board-wrap">
+      <div id="board"></div>
+      <div id="combo-msg"></div>
+      <div id="overlay">
+        <div id="ov-box">
+          <button id="ov-close" onclick="closeOverlay()">✕</button>
+          <span id="ov-icon">🌸</span>
+          <div id="ov-title">Zen Match</div>
+          <div id="ov-msg">Las fichas están apiladas unas sobre otras.
+
+            Solo puedes mover las que NO tienen ninguna ficha encima — las demás aparecen oscurecidas.
+
+            Junta 3 fichas iguales en la zona superior para eliminarlas.
+
+            ¡Piensa bien cuál mover para no quedarte sin espacio!</div>
+          <button id="ov-btn" onclick="overlayAct()">Comenzar</button>
+          <button id="ov-btn-b"
+            style="display:none;margin-top:8px;width:100%;background:transparent;border:1px solid rgba(255,255,255,0.12);color:#5a7a50;padding:11px;border-radius:30px;font-size:13px;cursor:pointer;font-family:Georgia,serif;letter-spacing:0.5px;"
+            onclick="overlayActB()"></button>
+          <button id="ov-btn-c"
+            style="display:none;margin-top:8px;width:100%;background:transparent;border:1px solid rgba(255,255,255,0.07);color:#3a5030;padding:9px;border-radius:30px;font-size:12px;cursor:pointer;font-family:Georgia,serif;"
+            onclick="overlayActC()"></button>
+          <div id="ov-tip">Tómate tu tiempo. No hay prisa en este jardín. 🍃</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TILE_TYPES = [
+      { e: '🌸', n: 'Flor' }, { e: '🍃', n: 'Hoja' }, { e: '🌊', n: 'Ola' },
+      { e: '🔮', n: 'Cristal' }, { e: '🌙', n: 'Luna' }, { e: '⭐', n: 'Estrella' },
+      { e: '🦋', n: 'Mariposa' }, { e: '🌺', n: 'Hibisco' }, { e: '🍀', n: 'Trébol' },
+      { e: '🌿', n: 'Rama' }, { e: '🌼', n: 'Margarita' }, { e: '🏮', n: 'Farol' },
+      { e: '🎋', n: 'Bambú' }, { e: '🪷', n: 'Loto' }, { e: '🐚', n: 'Caracol' },
+      { e: '🎍', n: 'Pino' }, { e: '🌻', n: 'Girasol' }, { e: '🍁', n: 'Otoño' },
+      { e: '🫧', n: 'Burbuja' }, { e: '🌈', n: 'Arcoíris' },
+    ];
+    const TIPS = [
+      'Respira profundo entre jugadas. La calma es tu mejor estrategia.',
+      'No hay prisa aquí. Cada ficha tiene su momento.',
+      'La paciencia abre caminos que la prisa cierra.',
+      'Como el agua, fluye sin esforzarte.',
+      'Tu mente merece este descanso. Sigue disfrutando.',
+      'Cada nivel superado es una victoria sobre el estrés.',
+    ];
+    const COMBOS = ['¡Bien!', '¡Excelente!', '¡Increíble!', '¡Maestro Zen!', '¡Perfecto!', '¡Asombroso!'];
+
+    const TW = 66, TH = 94;
+
+    let level = 1, score = 0, hintCt = 3, undoCt = 3, soundOn = true;
+    let tiles = [], slots = [], slotsMax = 7, combo = 0;
+    let moveHistory = [];
+    let ovMode = 'start';
+    let audioCtx = null, bgActive = false, bgTimer = null;
+    let gameStarted = false;   /* true only after player taps Comenzar */
+    let matchLocked = false;   /* prevents re-entrant match processing on rapid taps */
+
+    function getCfg() {
+      const C = [
+        /* ── Mundo 1: Primavera (niveles 1-4) ── */
+        { types: 5, sMax: 7, layers: 2, mode: 'easy' },
+        { types: 6, sMax: 7, layers: 2, mode: 'easy' },
+        { types: 6, sMax: 7, layers: 3, mode: 'medium' },
+        { types: 7, sMax: 7, layers: 3, mode: 'medium' },
+        /* ── Mundo 2: Verano (niveles 5-8) ── */
+        { types: 7, sMax: 6, layers: 3, mode: 'medium' },
+        { types: 8, sMax: 6, layers: 3, mode: 'medium' },
+        { types: 8, sMax: 6, layers: 4, mode: 'hard' },
+        { types: 9, sMax: 6, layers: 4, mode: 'hard' },
+        /* ── Mundo 3: Otoño (niveles 9-12) ── */
+        { types: 9, sMax: 5, layers: 4, mode: 'hard' },
+        { types: 10, sMax: 5, layers: 4, mode: 'hard' },
+        { types: 10, sMax: 5, layers: 5, mode: 'chaos' },
+        { types: 11, sMax: 5, layers: 5, mode: 'chaos' },
+        /* ── Mundo 4: Invierno (niveles 13-16) ── */
+        { types: 11, sMax: 4, layers: 5, mode: 'chaos' },
+        { types: 12, sMax: 4, layers: 5, mode: 'chaos' },
+        { types: 12, sMax: 4, layers: 6, mode: 'chaos' },
+        { types: 13, sMax: 4, layers: 6, mode: 'chaos' },
+        /* ── Mundo 5: Noche (niveles 17-20) ── */
+        { types: 14, sMax: 4, layers: 6, mode: 'chaos' },
+        { types: 15, sMax: 4, layers: 7, mode: 'chaos' },
+        { types: 17, sMax: 4, layers: 7, mode: 'chaos' },
+        { types: 20, sMax: 4, layers: 8, mode: 'chaos' },
+      ];
+      return C[Math.min(level - 1, C.length - 1)];
+    }
+
+    function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } }
+
+    /*
+      CORE STACKING SYSTEM
+      ---------------------
+      We place tiles on a 2D grid where each cell step is SMALLER than the tile.
+      This makes tiles physically overlap — the "stack" effect.
+    
+      stepX = how far apart columns are  (< TW → overlap horizontally)
+      stepY = how far apart rows are     (< TH → overlap vertically)
+    
+      Each layer adds a small pixel offset so stacked tiles peek from behind.
+    
+      A tile is BLOCKED if any tile with a higher z-index overlaps it by more
+      than a threshold in both X and Y.
+    */
+    function buildLayout(cfg, BW, BH) {
+      const MARGIN = 10;
+      const MARGIN_BOT = 100; /* Ampliado para evitar que fichas queden muy abajo en pantallas pequeñas */
+      /* Step sizes: smaller = more overlap = harder to see which tiles are which */
+      const stepX = cfg.mode === 'easy' ? 46 :
+        cfg.mode === 'medium' ? 40 :
+          cfg.mode === 'hard' ? 36 : 32;
+      const stepY = cfg.mode === 'easy' ? 56 :
+        cfg.mode === 'medium' ? 50 :
+          cfg.mode === 'hard' ? 44 : 38;
+
+      /* Layer offset: each deeper layer shifts right+down slightly */
+      const layerDX = 7, layerDY = 6;
+
+      /* How many grid positions fit on screen */
+      const cols = Math.max(3, Math.floor((BW - MARGIN * 2 - TW) / stepX) + 1);
+      const rows = Math.max(3, Math.floor((BH - MARGIN - MARGIN_BOT - TH) / stepY) + 1);
+
+      /* Build tile pool */
+      const typeSet = TILE_TYPES.slice(0, cfg.types);
+      const pool = [];
+      typeSet.forEach(t => { for (let i = 0; i < 3; i++) pool.push({ ...t }); });
+      shuffle(pool);
+
+      /* Build candidate grid positions (col, row pairs) */
+      const positions = [];
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) positions.push([c, r]);
+      shuffle(positions);
+
+      /*
+        Layer assignment strategy per difficulty:
+        - easy:   most tiles on layer 0-1, same-type often on same layer
+        - medium: layers 0-2, more mixed
+        - hard:   layers spread randomly 0-(max-1)
+        - chaos:  completely random, plus position jitter
+      */
+      const placed = [];
+      const totalTiles = pool.length;
+
+      /* In easy mode: group same-emoji tiles so they tend to surface together */
+      if (cfg.mode === 'easy' || cfg.mode === 'medium') {
+        /* Sort pool so each trio is consecutive, then assign layers gradually */
+        const byType = {};
+        pool.forEach(t => { if (!byType[t.e]) byType[t.e] = []; byType[t.e].push(t); });
+        const sorted = [];
+        Object.values(byType).forEach(arr => arr.forEach(t => sorted.push(t)));
+
+        sorted.forEach((tile, i) => {
+          const posIdx = i % positions.length;
+          const [gc, gr] = positions[posIdx];
+          /* easy: all 3 of a type share the same layer; medium: slight spread */
+          const triIdx = Math.floor(i / 3); // which trio
+          const baseLayer = cfg.mode === 'easy'
+            ? Math.floor(triIdx * cfg.layers / typeSet.length) % cfg.layers
+            : Math.floor(Math.random() * cfg.layers);
+          const jx = (Math.random() - 0.5) * 6;
+          const jy = (Math.random() - 0.5) * 5;
+          const x = Math.max(0, Math.min(BW - TW, MARGIN + gc * stepX + baseLayer * layerDX + jx));
+          const y = Math.max(0, Math.min(BH - TH - MARGIN_BOT, MARGIN + gr * stepY + baseLayer * layerDY + jy));
+          placed.push({ e: tile.e, n: tile.n, gc, gr, layer: baseLayer, x, y });
+        });
+      } else {
+        /* hard/chaos: random layers + position jitter */
+        for (let i = 0; i < totalTiles; i++) {
+          const [gc, gr] = positions[i % positions.length];
+          const layer = Math.floor(Math.random() * cfg.layers);
+          const jitter = cfg.mode === 'chaos' ? 18 : 8;
+          const jx = (Math.random() - 0.5) * jitter;
+          const jy = (Math.random() - 0.5) * jitter;
+          const x = Math.max(0, Math.min(BW - TW, MARGIN + gc * stepX + layer * layerDX + jx));
+          const y = Math.max(0, Math.min(BH - TH - MARGIN_BOT, MARGIN + gr * stepY + layer * layerDY + jy));
+          placed.push({ e: pool[i].e, n: pool[i].n, gc, gr, layer, x, y });
+        }
+      }
+
+      /* Assign z-indices: layer is primary, then grid position */
+      const assigned = placed.map((p, i) => ({
+        id: i, e: p.e, n: p.n, x: p.x, y: p.y, layer: p.layer,
+        z: p.layer * 1000 + p.gr * 50 + p.gc,
+        inSlot: false, removed: false, el: null, slotEl: null,
+        isGold: false
+      }));
+
+      if (level >= 2) {
+        const typesInLevel = [...new Set(assigned.map(t => t.e))];
+        const goldType = typesInLevel[Math.floor(Math.random() * typesInLevel.length)];
+        assigned.forEach(t => { if (t.e === goldType) t.isGold = true; });
+      }
+      return assigned;
+    }
+
+    /* PARTICLES */
+    let pCtx = null, pCanvas = null, pAnimFrame = null, particles = [];
+    function initParticles() {
+      pCanvas = document.getElementById('particles-canvas');
+      if (!pCanvas) return;
+      pCtx = pCanvas.getContext('2d');
+      resizeParticles();
+      startParticles();
+    }
+  
+    
+    
+
+    /*
+      BLOCKED CHECK
+      A tile is blocked if any other non-removed, non-slot tile with a HIGHER z
+      overlaps it in both axes by more than a threshold.
+      Threshold = fraction of tile size — if center-to-center distance is small
+      enough, the upper tile covers the lower one.
+    */
+    function isBlocked(tile) {
+      if (tile.inSlot || tile.removed) return false;
+      const cx = tile.x + TW / 2, cy = tile.y + TH / 2;
+      for (const o of tiles) {
+        if (o.id === tile.id || o.inSlot || o.removed) continue;
+        if (o.z <= tile.z) continue;
+        const ocx = o.x + TW / 2, ocy = o.y + TH / 2;
+        if (Math.abs(ocx - cx) < TW * 0.75 && Math.abs(ocy - cy) < TH * 0.70) return true;
+      }
+      return false;
+    }
+
+    /* ── SEASON THEMES ──
+       Each world gets a distinct dark background so the player feels progression.
+       Colors are all dark/muted so tiles remain readable on top.
+    */
+    const SEASON_THEMES = [
+      /* Mundo 1 — Primavera: dark forest green */
+      { bg: '#0a1410', board: '#0d1a12', bar: '#0a1410', accent: 'rgba(80,160,80,0.15)' },
+      /* Mundo 2 — Verano: dark teal ocean */
+      { bg: '#091418', board: '#0c1c20', bar: '#091418', accent: 'rgba(40,130,160,0.15)' },
+      /* Mundo 3 — Otoño: dark amber earth */
+      { bg: '#160e08', board: '#1c1208', bar: '#160e08', accent: 'rgba(180,90,20,0.15)' },
+      /* Mundo 4 — Invierno: dark slate blue */
+      { bg: '#0a0e18', board: '#0e1222', bar: '#0a0e18', accent: 'rgba(80,110,200,0.15)' },
+      /* Mundo 5 — Noche: deep purple-black */
+      { bg: '#08060e', board: '#0e0818', bar: '#08060e', accent: 'rgba(120,60,200,0.15)' },
+    ];
+    function getWorldIndex() { return Math.min(Math.floor((level - 1) / 4), SEASON_THEMES.length - 1); }
+
+    function applySeasonTheme() {
+      const t = SEASON_THEMES[getWorldIndex()];
+      document.body.style.background = t.bg;
+      const game = document.getElementById('game');
+      game.style.background = t.board;
+      const topbar = document.getElementById('topbar');
+      topbar.style.background = 'transparent';
+      const bw = document.getElementById('board-wrap');
+      bw.style.background = 'transparent';
+      const slot = document.getElementById('slot-area');
+      slot.style.background = 'transparent';
+      /* Subtle accent glow on board edges */
+      bw.style.boxShadow = 'inset 0 0 40px ' + t.accent;
+    }
+
+    function initLevel() {
+      const cfg = getCfg();
+      slotsMax = cfg.sMax; tiles = []; slots = []; moveHistory = []; combo = 0; matchLocked = false;
+      applySeasonTheme();
+      document.getElementById('lv-val').textContent = level;
+      document.getElementById('sc-val').textContent = score;
+      document.getElementById('hint-ct').textContent = hintCt;
+      const undoEl = document.getElementById('undo-ct');
+      if (undoEl) undoEl.textContent = undoCt;
+
+      const bw = document.getElementById('board-wrap');
+      const BW = bw.offsetWidth || 360;
+      const BH = bw.offsetHeight || 500;
+
+      tiles = buildLayout(cfg, BW, BH);
+      renderBoard();
+      renderSlots();
+      updateDanger();
+      initParticles();
+    }
+
+    function renderBoard() {
+      const bd = document.getElementById('board');
+      bd.innerHTML = '';
+      const visible = tiles.filter(t => !t.inSlot && !t.removed);
+      visible.sort((a, b) => a.z - b.z);
+      visible.forEach(tile => {
+        const blocked = isBlocked(tile);
+        const el = document.createElement('div');
+        el.className = 'tile tile-in ' + (blocked ? 'locked' : 'free') + (tile.isGold ? ' gold gold-glow' : '');
+        el.style.cssText = `left:${Math.round(tile.x)}px;top:${Math.round(tile.y)}px;z-index:${tile.z};`;
+        el.innerHTML = `<span class="tile-emoji">${tile.e}</span><span class="tile-name">${tile.n}</span>`;
+        if (!blocked) el.addEventListener('click', () => onTileClick(tile));
+        tile.el = el;
+        bd.appendChild(el);
+      });
+    }
+
+    function renderSlots() {
+      const container = document.getElementById('slot-cells');
+      container.innerHTML = '';
+      for (let i = 0; i < slotsMax; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'sc' + (slots[i] ? ' occ' : '');
+        if (slots[i]) {
+          const t = slots[i];
+          const el = document.createElement('div');
+          el.className = 'tile slot-tile' + (t.isGold ? ' gold' : '');
+          el.innerHTML = `<span class="tile-emoji">${t.e}</span><span class="tile-name">${t.n}</span>`;
+          t.slotEl = el; cell.appendChild(el);
+        }
+        container.appendChild(cell);
+      }
+      document.getElementById('slot-count').textContent = `${slots.length} / ${slotsMax}`;
+    }
+
+    function updateDanger() {
+      const pct = slots.length / slotsMax * 100;
+      const bar = document.getElementById('danger-fill');
+      bar.style.width = pct + '%';
+      bar.style.background = pct >= 86 ? '#c0392b' : pct >= 60 ? '#d4821a' : '#4a9060';
+    }
+
+    function onTileClick(tile) {
+      if (matchLocked) return;                             /* wait for current match to finish */
+      if (isBlocked(tile) || tile.inSlot || tile.removed) { sfx('error'); return; }
+      if (slots.length >= slotsMax) { sfx('error'); shakeSlotArea(); return; }
+      sfx('move');
+      moveHistory.push(tile);
+      tile.inSlot = true;
+      slots.push(tile);
+      slots.sort((a, b) => a.e.localeCompare(b.e));
+      renderBoard(); renderSlots(); updateDanger();
+      checkMatches();
+    }
+
+    function useUndo() {
+      if (undoCt <= 0 || matchLocked || moveHistory.length === 0) { sfx('error'); return; }
+      const lastTile = moveHistory.pop();
+      if (lastTile) {
+        sfx('move');
+        lastTile.inSlot = false;
+        slots = slots.filter(t => t.id !== lastTile.id);
+        undoCt--;
+        document.getElementById('undo-ct').textContent = undoCt;
+        renderBoard(); renderSlots(); updateDanger();
+      }
+    }
+
+    function checkMatches() {
+      const cnt = {};
+      slots.forEach(t => { cnt[t.e] = (cnt[t.e] || 0) + 1; });
+      for (const e in cnt) {
+        if (cnt[e] >= 3) {
+          const rem = slots.filter(t => t.e === e).slice(0, 3);
+          matchLocked = true;                               /* lock until doRemove finishes */
+          setTimeout(() => doRemove(rem), 65);
+          return;
+        }
+      }
+      if (slots.length >= slotsMax) {
+        const c2 = {}; slots.forEach(t => { c2[t.e] = (c2[t.e] || 0) + 1; });
+        if (!Object.values(c2).some(v => v >= 3)) {
+          setTimeout(() => {
+            sfx('error');
+            showOverlay('😔', 'Sin espacio',
+              'La zona de emparejamiento está llena\ny no hay tres iguales disponibles.\n\n¿Qué deseas hacer?',
+              '↺ Reintentar este nivel', 'retry_level',
+              TIPS[Math.floor(Math.random() * TIPS.length)],
+              '⏮ Reiniciar desde el nivel 1', () => { level = 1; score = 0; hintCt = 3; matchLocked = false; initLevel(); startBg(); },
+              '✕ Salir al inicio', () => {
+                level = 1; score = 0; hintCt = 3; matchLocked = false; gameStarted = false;
+                document.getElementById('overlay').style.display = 'flex';
+                showOverlay('🌸', 'Zen Match',
+                  'Las fichas están apiladas unas sobre otras.\n\nSolo puedes mover las que NO tienen ninguna ficha encima — las demás aparecen oscurecidas.\n\nJunta 3 fichas iguales en la zona superior para eliminarlas.\n\n¡Piensa bien cuál mover para no quedarte sin espacio!',
+                  'Comenzar', 'start', 'Tómate tu tiempo. No hay prisa en este jardín. 🍃');
+              }
+            );
+          }, 400);
+        }
+      }
+    }
+
+    function doRemove(rem) {
+      sfx('match'); combo++;
+      score += 30 * level + (combo > 1 ? combo * 10 : 0);
+
+      moveHistory = moveHistory.filter(h => !rem.includes(h));
+
+      rem.forEach(t => {
+        t.removed = true; t.inSlot = false;
+        if (t.slotEl) t.slotEl.classList.add('matched');
+      });
+
+      if (rem.every(t => t.isGold)) {
+        sfx('gold');
+        undoCt++;
+        document.getElementById('undo-ct').textContent = undoCt;
+        score += 150;
+        showComboMsg(combo, '¡MÍSTICO! +1 ↩️');
+      } else if (combo >= 2) {
+        showComboMsg(combo);
+      }
+      document.getElementById('sc-val').textContent = score;
+      setTimeout(() => {
+        slots = slots.filter(t => !rem.includes(t));
+        rem.forEach(t => { t.slotEl = null; });
+        renderSlots(); updateDanger();
+        if (tiles.every(t => t.removed)) {
+          /* level complete — keep locked until overlay shows */
+          setTimeout(() => {
+            sfx('levelup'); level++;
+            hintCt = Math.min(hintCt + 1, 5);
+            if (level > 20) {
+              showOverlay('🏆', '¡Maestro Zen Supremo!',
+                `Has completado los 20 niveles.\n¡Eres una leyenda de la calma!\n\nPuntaje final: ${score}`,
+                'Volver a empezar', 'retry',
+                'La verdadera calma es saber que siempre puedes comenzar de nuevo.');
+            } else {
+              const worldNames = { 1: '🌸 Primavera', 5: '🌊 Verano', 9: '🍁 Otoño', 13: '❄️ Invierno', 17: '🌙 Noche' };
+              const worldMsg = worldNames[level] ? `\n\n¡Nuevo mundo: ${worldNames[level]}!` : '';
+              showOverlay('✨', `¡Nivel ${level - 1} completado!`,
+                `Excelente juicio y paciencia.\nTu mente está en paz.\nPuntaje: ${score}${worldMsg}`,
+                `Nivel ${level} →`, 'next', TIPS[Math.floor(Math.random() * TIPS.length)]);
+            }
+          }, 520);
+        } else {
+          /* not done yet — check if a chain match exists, otherwise unlock */
+          const cnt = {};
+          slots.forEach(t => { cnt[t.e] = (cnt[t.e] || 0) + 1; });
+          const chainEmoji = Object.keys(cnt).find(e => cnt[e] >= 3);
+          if (chainEmoji) {
+            /* another trio already sitting in slots — remove it automatically */
+            const chainRem = slots.filter(t => t.e === chainEmoji).slice(0, 3);
+            setTimeout(() => doRemove(chainRem), 65);
+          } else {
+            matchLocked = false;   /* safe to accept taps again */
+          }
+        }
+      }, 420);
+    }
+
+    function showComboMsg(n, customMsg) {
+      const el = document.getElementById('combo-msg');
+      el.textContent = customMsg || COMBOS[Math.min(n - 2, COMBOS.length - 1)];
+      el.classList.remove('combo-show'); void el.offsetWidth;
+      el.classList.add('combo-show');
+      setTimeout(() => el.classList.remove('combo-show'), 1200);
+    }
+
+    function useHint() {
+      if (hintCt <= 0) { sfx('error'); return; }
+      const free = tiles.filter(t => !t.inSlot && !t.removed && !isBlocked(t));
+      if (!free.length) return;
+      const slotCnt = {};
+      slots.forEach(t => { slotCnt[t.e] = (slotCnt[t.e] || 0) + 1; });
+      const freeCnt = {};
+      free.forEach(t => { freeCnt[t.e] = (freeCnt[t.e] || 0) + 1; });
+      let best = null, bestScore = -1;
+      free.forEach(t => {
+        let score = 0;
+        if (slotCnt[t.e] === 2) score = 100;
+        else if (slotCnt[t.e] === 1) score = (freeCnt[t.e] >= 2) ? 60 : 50;
+        else score = (freeCnt[t.e] >= 3) ? 30 : freeCnt[t.e];
+        if (score > bestScore) { bestScore = score; best = t; }
+      });
+      if (best && best.el) {
+        sfx('hint');
+        best.el.classList.add('hint-glow');
+        setTimeout(() => { if (best.el) best.el.classList.remove('hint-glow'); }, 1800);
+        hintCt--;
+        document.getElementById('hint-ct').textContent = hintCt;
+      }
+    }
+
+    function shakeSlotArea() {
+      const el = document.getElementById('slot-area');
+      el.style.animation = 'shakeX 0.38s ease';
+      setTimeout(() => { el.style.animation = ''; }, 420);
+    }
+
+    function overlayAct() {
+      document.getElementById('overlay').style.display = 'none';
+      hideExtraBtns();
+      /* Restore normal btn onclick */
+      document.getElementById('ov-btn').onclick = overlayAct;
+      if (ovMode === 'start' || ovMode === 'retry') { level = 1; score = 0; hintCt = 3; }
+      /* retry_level and next keep current level/score */
+      gameStarted = true;
+      matchLocked = false;
+      initLevel(); startBg();
+    }
+
+    /* ── OVERLAY HELPERS ── */
+    let _fnB = null, _fnC = null;
+    function overlayActB() { document.getElementById('overlay').style.display = 'none'; hideExtraBtns(); if (_fnB) _fnB(); }
+    function overlayActC() { document.getElementById('overlay').style.display = 'none'; hideExtraBtns(); if (_fnC) _fnC(); }
+    function hideExtraBtns() {
+      document.getElementById('ov-btn-b').style.display = 'none';
+      document.getElementById('ov-btn-c').style.display = 'none';
+    }
+    function closeOverlay() {
+      document.getElementById('overlay').style.display = 'none';
+      hideExtraBtns();
+    }
+
+    function showOverlay(icon, title, msg, btn, mode, tip, btnB, fnB, btnC, fnC, showClose) {
+      ovMode = mode;
+      document.getElementById('ov-icon').textContent = icon;
+      document.getElementById('ov-title').textContent = title;
+      document.getElementById('ov-msg').textContent = msg;
+      document.getElementById('ov-btn').textContent = btn;
+      document.getElementById('ov-tip').textContent = tip || '';
+      /* secondary button */
+      const elB = document.getElementById('ov-btn-b');
+      if (btnB) { elB.textContent = btnB; elB.style.display = 'block'; _fnB = fnB || null; }
+      else { elB.style.display = 'none'; _fnB = null; }
+      /* tertiary button */
+      const elC = document.getElementById('ov-btn-c');
+      if (btnC) { elC.textContent = btnC; elC.style.display = 'block'; _fnC = fnC || null; }
+      else { elC.style.display = 'none'; _fnC = null; }
+      /* hide injected btn2 from confirmRestart if present */
+      const old = document.getElementById('ov-btn2');
+      if (old) old.style.display = 'none';
+
+      const closeBtn = document.getElementById('ov-close');
+      if (closeBtn) closeBtn.style.display = showClose ? 'block' : 'none';
+
+      document.getElementById('overlay').style.display = 'flex';
+    }
+
+    function confirmRestart() {
+      showOverlay('↺', '¿Qué deseas hacer?',
+        'Elige una opción:',
+        '↺ Reiniciar este nivel', 'restart_level',
+        '',
+        '⏮ Reiniciar todo el juego', () => { level = 1; score = 0; hintCt = 3; matchLocked = false; initLevel(); startBg(); },
+        null, null, true
+      );
+    }
+
+    /* AUDIO */
+    function getCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+    let ambientOsc = null, ambientFilter = null, ambientGain = null;
+    function startBg() {
+      if (!soundOn || bgActive) return;
+      bgActive = true;
+      const ctx = getCtx(), master = ctx.createGain();
+      master.gain.value = 0.07;
+      master.connect(ctx.destination);
+
+      const bufferSize = ctx.sampleRate * 2;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+
+      ambientOsc = ctx.createBufferSource();
+      ambientOsc.buffer = noiseBuffer;
+      ambientOsc.loop = true;
+
+      ambientFilter = ctx.createBiquadFilter();
+      ambientFilter.type = 'lowpass';
+      ambientFilter.frequency.value = 300;
+
+      let time = ctx.currentTime;
+      for (let i = 0; i < 300; i++) {
+        ambientFilter.frequency.linearRampToValueAtTime(500, time + 6);
+        ambientFilter.frequency.linearRampToValueAtTime(200, time + 12);
+        time += 12;
+      }
+
+      ambientGain = ctx.createGain();
+      ambientGain.gain.value = 0.012;
+
+      ambientOsc.connect(ambientFilter);
+      ambientFilter.connect(ambientGain);
+      ambientGain.connect(ctx.destination);
+      ambientOsc.start();
+      const scale = [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.26, 783.99, 880];
+      /* Voice 1 — main melody, medium-rate notes */
+      let nxt = ctx.currentTime + 0.5;
+      function sched() {
+        if (!bgActive) return;
+        const freq = scale[Math.floor(Math.random() * scale.length)] * (Math.random() < 0.2 ? 0.5 : 1);
+        const dur = 2.2 + Math.random() * 2.2;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0, nxt);
+        g.gain.linearRampToValueAtTime(0.55, nxt + 0.6);
+        g.gain.exponentialRampToValueAtTime(0.001, nxt + dur);
+        o.connect(g); g.connect(master);
+        o.start(nxt); o.stop(nxt + dur + 0.1);
+        nxt += 1.2 + Math.random() * 1.8;
+        bgTimer = setTimeout(sched, 1100 + Math.random() * 1400);
+      }
+      sched();
+      /* Voice 2 — slower, lower-octave notes for depth */
+      const lowScale = [130.81, 146.83, 164.81, 196, 220, 261.63];
+      let nxt2 = ctx.currentTime + 1.8;
+      function sched2() {
+        if (!bgActive) return;
+        const freq = lowScale[Math.floor(Math.random() * lowScale.length)];
+        const dur = 3.5 + Math.random() * 3.0;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0, nxt2);
+        g.gain.linearRampToValueAtTime(0.30, nxt2 + 1.0);
+        g.gain.exponentialRampToValueAtTime(0.001, nxt2 + dur);
+        o.connect(g); g.connect(master);
+        o.start(nxt2); o.stop(nxt2 + dur + 0.1);
+        nxt2 += 2.8 + Math.random() * 3.5;
+        setTimeout(sched2, 2600 + Math.random() * 3200);
+      }
+      sched2();
+    }
+    function stopBg() {
+      bgActive = false; clearTimeout(bgTimer);
+      if (ambientOsc) { ambientOsc.stop(); ambientOsc = null; }
+    }
+    function toggleSound() {
+      soundOn = !soundOn;
+      document.getElementById('snd-btn').textContent = '♪ ' + (soundOn ? 'OFF' : 'ON');
+      if (soundOn) { bgActive = false; startBg(); } else stopBg();
+    }
+    function sfx(type) {
+      if (!soundOn) return;
+      const ctx = getCtx(), now = ctx.currentTime, dst = ctx.destination;
+      function tone(freq, delay, dur, vol, wave) {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = wave || 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(vol, now + delay);
+        g.gain.exponentialRampToValueAtTime(0.001, now + delay + dur);
+        o.connect(g); g.connect(dst);
+        o.start(now + delay); o.stop(now + delay + dur + 0.01);
+      }
+      if (type === 'move') { tone(440, 0, 0.18, 0.09); tone(587, 0.07, 0.18, 0.07); }
+      if (type === 'match') { [523, 659, 784, 1047, 1318].forEach((f, i) => tone(f, i * 0.09, 0.45, 0.13, 'triangle')); }
+      if (type === 'error') { tone(120, 0, 0.28, 0.06, 'sawtooth'); }
+      if (type === 'levelup') { [392, 494, 587, 784, 988, 1174].forEach((f, i) => tone(f, i * 0.13, 0.55, 0.15)); }
+      if (type === 'hint') { tone(880, 0, 0.15, 0.10); tone(1100, 0.18, 0.25, 0.09); }
+      if (type === 'gold') { [659, 880, 1046, 1318].forEach((f, i) => tone(f, i * 0.1, 0.6, 0.2, 'sine')); }
+    }
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      if (!gameStarted) return;   /* don't render tiles before game begins */
+      resizeParticles();
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(initLevel, 250);
+    });
+  </script>
+</body>
+
+</html>

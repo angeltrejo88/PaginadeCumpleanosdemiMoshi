@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Feliz Cumpleaños, Moshi 🦋</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+
+<div id="welcomeOverlay" class="welcome-overlay">
+  
+  <div id="phasePregunta" class="welcome-card">
+    <h2 class="welcome-title">¿Estás lista para este regalo??</h2>
+    <div class="welcome-buttons" id="btnContainer">
+      <button id="btnSi" class="welcome-btn btn-si">Sí</button>
+      <button id="btnNo" class="welcome-btn btn-no">No</button>
+    </div>
+  </div>
+
+  <div id="phasePastel" class="welcome-card" style="display: none;">
+    <h2 class="welcome-title">¡Sopla las velitas! 🎂</h2>
+    <div class="cake-container" style="position: relative; display: inline-block; margin-bottom: 2rem;">
+    <img id="cakeOn" src="pastel-prendido.png" alt="Pastel de cumpleaños" style="max-width: 280px; width: 100%; display: block; margin: 0 auto;">
+    
+    <img id="cakeOff" src="pastel-apagado.png" alt="Pastel apagado" style="max-width: 280px; width: 100%; display: none; margin: 0 auto;">
+  </div>
+
+  <div class="mic-status" id="micStatus" style="font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--pink-light); opacity: 0.8;">
+    Pidiendo permiso para escuchar tu soplido...
+  </div>
+  </div>
+
+</div>
+
+<audio id="bgMusic" src="Pablo Alborán - Solamente Tú.mp3" loop></audio>
+
+
+<canvas id="stars"></canvas>
+
+<div id="petals"></div>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="butterfly-bg" id="bflyBg"></div>
+  <p class="pre-title">Con todo mi amor, para ti</p>
+  <h1 class="main-title">
+    Feliz<br><span>Cumpleaños</span>
+  </h1>
+  <div class="date-badge">21 · mayo · 2026</div>
+  <div class="scroll-hint">Desliza</div>
+</section>
+
+<!-- ═══ NAME ═══ -->
+<section class="name-section">
+  <p class="full-name reveal">Raquel Vela Martínez</p>
+  <span class="nick reveal">Mi Moshi</span>
+</section>
+
+<!-- ═══ MESSAGE ═══ -->
+<section class="msg-section">
+  <div class="msg-card reveal">
+    <span class="msg-label">Una carta desde el corazón…</span>
+    <p class="msg-text">
+      Mi querida <em>Moshi</em>, quiero que sepas que eres la persona
+      más especial en mi vida. Cada momento contigo es un regalo que atesoro con toda el alma.<br><br>
+
+      Eres como una mariposa: libre, única, increíblemente hermosa. Y yo, Angel, tengo la suerte
+      inmensa de verte volar cerca de mí cada día. <em>Te amo</em> con una profundidad que las palabras
+      apenas pueden contener.<br><br>
+
+      En este cumpleaños quiero prometerte que quiero seguir a tu lado <em>mucho, pero mucho tiempo</em>.
+      Construir recuerdos, reírnos sin parar, y estar presente en cada capítulo de tu historia.
+      ¡Estoy tan, tan feliz de que existas y de que este día haya llegado!<br><br>
+
+      Que este año que comienza esté lleno de mariposas, de risas, de sueños cumplidos,
+      y —sobre todo— de amor. <em>El mío, siempre para ti.</em>
+    </p>
+    <p class="signature">Con amor eterno, Angel Trejo 🦋</p>
+  </div>
+</section>
+
+
+<!-- ═══ SOLAR SYSTEM LINK ═══ -->
+<section style="position:relative;z-index:1;padding:1rem 1.2rem 4rem;text-align:center;">
+  <div class="reveal" style="max-width:480px;margin:0 auto;">
+    <p style="font-family:'Dancing Script',cursive;font-size:clamp(0.9rem,3.5vw,1.1rem);color:rgba(255,150,200,0.55);letter-spacing:0.1em;margin-bottom:1.6rem;">
+      Te tengo una sorpresa especial…
+    </p>
+    <a href="sistema-solar-del-amor.html" style="text-decoration:none;display:inline-block;">
+      <div id="solarBtn" style="
+        position:relative;
+        background:linear-gradient(135deg,rgba(255,77,158,0.1),rgba(10,0,20,0.8));
+        border:1px solid rgba(255,77,158,0.35);
+        border-radius:20px;
+        padding:2rem 2.5rem;
+        cursor:pointer;
+        transition:all 0.3s ease;
+        overflow:hidden;
+      ">
+        <!-- mini canvas star bg -->
+        <canvas id="miniStars" style="position:absolute;inset:0;width:100%;height:100%;border-radius:20px;pointer-events:none;"></canvas>
+        <div style="position:relative;z-index:1;">
+          <div style="font-size:clamp(2.2rem,8vw,3rem);margin-bottom:0.6rem;filter:drop-shadow(0 0 12px rgba(255,180,230,0.7));">🌌</div>
+          <div style="font-family:'Playfair Display',serif;font-size:clamp(1.1rem,5vw,1.7rem);font-style:italic;color:rgba(255,240,255,0.9);margin-bottom:0.4rem;">
+            Sistema Solar del Amor
+          </div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(0.85rem,3vw,1rem);color:rgba(255,160,210,0.6);letter-spacing:0.08em;">
+            Un universo creado solo para ti, Moshi ✨
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ PHOTO GALLERY ═══ -->
+<section class="photos-section">
+  <h2 class="section-title reveal">Nuestros momentos 💗</h2>
+  <p class="section-sub reveal">Toca una foto para verla más grande</p>
+  <div class="photos-grid" id="photosGrid">
+
+    <!-- FOTO 1 — destacada, ocupa todo el ancho -->
+    <div class="photo-item reveal" data-caption="Mi favorita de las dos 🦋">
+      <img src="foto1.jpeg" alt="Foto 1" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="photo-placeholder" style="display:none">
+        <span class="ph-icon">🦋</span>
+        <span class="ph-num">Foto 1 · Destacada</span>
+        <span>Reemplaza src con tu imagen</span>
+      </div>
+      <div class="photo-overlay"><span class="photo-caption">Mi favorita de las dos 🦋</span></div>
+    </div>
+
+    <!-- FOTO 2 -->
+    <div class="photo-item reveal" data-caption="Juntos siempre 💗">
+      <img src="foto2.jpeg" alt="Foto 2" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="photo-placeholder" style="display:none">
+        <span class="ph-icon">🌸</span>
+        <span class="ph-num">Foto 2</span>
+        <span>Reemplaza src con tu imagen</span>
+      </div>
+      <div class="photo-overlay"><span class="photo-caption">Juntos siempre 💗</span></div>
+    </div>
+
+    <!-- FOTO 3 -->
+    <div class="photo-item reveal" data-caption="Te amo, Moshi ✨">
+      <img src="foto3.jpeg" alt="Foto 3" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="photo-placeholder" style="display:none">
+        <span class="ph-icon">💖</span>
+        <span class="ph-num">Foto 3</span>
+        <span>Reemplaza src con tu imagen</span>
+      </div>
+      <div class="photo-overlay"><span class="photo-caption">Te amo, Moshi ✨</span></div>
+    </div>
+
+    <!-- FOTO 4 -->
+    <div class="photo-item reveal" data-caption="Mi mundo entero 🌺">
+      <img src="foto4.jpeg" alt="Foto 4" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="photo-placeholder" style="display:none">
+        <span class="ph-icon">🌺</span>
+        <span class="ph-num">Foto 4</span>
+        <span>Reemplaza src con tu imagen</span>
+      </div>
+      <div class="photo-overlay"><span class="photo-caption">Mi mundo entero 🌺</span></div>
+    </div>
+
+    <!-- FOTO 5 -->
+    <div class="photo-item reveal" data-caption="Recuerdos que atesoro 🦋">
+      <img src="foto5.jpeg" alt="Foto 5" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="photo-placeholder" style="display:none">
+        <span class="ph-icon">🦋</span>
+        <span class="ph-num">Foto 5</span>
+        <span>Reemplaza src con tu imagen</span>
+      </div>
+      <div class="photo-overlay"><span class="photo-caption">Recuerdos que atesoro 🦋</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lbClose">✕</button>
+  <img class="lightbox-img" id="lbImg" src="" alt="">
+  <p class="lightbox-caption" id="lbCaption"></p>
+</div>
+
+<!-- ═══ INTERACTIVE WISHES ═══ -->
+<section class="wishes-section reveal">
+  <h2 class="section-title">¿Qué le deseas a Moshi?</h2>
+  <p class="section-sub">Toca un deseo para revelar un mensaje especial</p>
+  <div class="wishes-grid" id="wishGrid"></div>
+  <div class="wish-result">
+    <div class="wish-bubble" id="wishBubble"></div>
+  </div>
+</section>
+
+<!-- ═══  GAME ═══ -->
+<section class="reveal" style="position:relative; z-index:1; padding: 4rem 1.2rem; text-align:center;">
+  <div style="max-width:480px; margin:0 auto;">
+    <h2 class="section-title">¿Lista para un reto, Moshi? 🎮</h2>
+    <p class="section-sub" style="margin-bottom: 2rem;">Tengo otro juego interactivo preparado especialmente para ti</p>
+    
+    <a href="zen_match.html" class="game-link-btn" style="
+      text-decoration: none;
+      display: inline-block;
+      background: linear-gradient(135deg, rgba(255, 77, 158, 0.2), rgba(10, 0, 20, 0.9));
+      border: 1px solid var(--pink);
+      border-radius: 50px;
+      padding: 1.2rem 2.5rem;
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.1rem, 4vw, 1.4rem);
+      font-style: italic;
+      color: var(--white);
+      box-shadow: 0 0 20px rgba(255, 77, 158, 0.3);
+      transition: all 0.3s ease;
+    ">
+      ¡Ir a jugar! 🦋✨
+    </a>
+  </div>
+</section>
+
+<!-- ═══ GALLERY ═══ -->
+<section class="gallery-section">
+  <h2 class="section-title reveal">Para la que ama las mariposas</h2>
+  <div class="butterflies-row" id="bRow"></div>
+</section>
+
+<!-- ═══ COUNTDOWN ═══ -->
+<section class="countdown-section">
+  <h2 class="section-title reveal">Faltan…</h2>
+  <div class="countdown-grid" id="countdown">
+    <div class="count-box">
+      <span class="count-num" id="cd-d">--</span>
+      <span class="count-label">días</span>
+    </div>
+    <span class="count-divider">:</span>
+    <div class="count-box">
+      <span class="count-num" id="cd-h">--</span>
+      <span class="count-label">horas</span>
+    </div>
+    <span class="count-divider">:</span>
+    <div class="count-box">
+      <span class="count-num" id="cd-m">--</span>
+      <span class="count-label">minutos</span>
+    </div>
+    <span class="count-divider">:</span>
+    <div class="count-box">
+      <span class="count-num" id="cd-s">--</span>
+      <span class="count-label">segundos</span>
+    </div>
+  </div>
+  <p id="cd-msg" style="margin-top:2rem;font-family:'Dancing Script',cursive;font-size:clamp(1.3rem,5vw,1.8rem);color:var(--pink);display:none;line-height:1.6;">
+    🎉 ¡HOY ES TU DÍA, MOSHI! 🎉<br>¡Feliz Cumpleaños, mi amor! 🦋💗
+  </p>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-hearts">🦋 💗 🦋</div>
+  <p class="footer-note">Hecho con amor por Angel Trejo · Para Raquel Vela Martínez · 2026</p>
+</footer>
+
+<button id="audioToggleBtn" class="audio-toggle-btn" aria-label="Silenciar música" style="display: none;">
+  <span id="audioIcon">🔊</span>
+</button>
+
+<script src="script.js">
+
+</script>
+</body>
+</html>

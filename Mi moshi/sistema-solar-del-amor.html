@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Solar del Amor 🌌</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,300;1,400&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#000; }
+  #c { display:block; width:100%; height:100%; }
+
+  #backBtn {
+    position:fixed; top:1rem; left:1rem; z-index:20;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,100,180,0.4);
+    border-radius:999px; padding:0.45rem 1.1rem 0.45rem 0.8rem;
+    color:rgba(255,200,230,0.85); font-family:'Cormorant Garamond',serif;
+    font-size:0.92rem; letter-spacing:0.07em; cursor:pointer;
+    display:flex; align-items:center; gap:0.45rem;
+    backdrop-filter:blur(10px); transition:all 0.2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #backBtn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.2; }
+
+  #titleBar {
+    position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:20;
+    padding:0.85rem 1rem 0; text-align:center; pointer-events:none;
+  }
+  #titleBar h1 {
+    font-family:'Dancing Script',cursive; font-weight:600;
+    font-size:clamp(0.85rem,3.2vw,1.3rem); letter-spacing:0.05em;
+    color:rgba(255,180,220,0.45); text-shadow:0 0 20px rgba(255,100,180,0.4);
+  }
+
+  #resetBtn {
+    position:fixed; top:1rem; right:1rem; z-index:20;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,100,180,0.28);
+    border-radius:999px; padding:0.38rem 0.9rem;
+    color:rgba(255,180,220,0.6); font-family:'Cormorant Garamond',serif;
+    font-size:0.82rem; letter-spacing:0.1em; cursor:pointer;
+    backdrop-filter:blur(8px); transition:all 0.2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #resetBtn:hover { color:rgba(255,220,240,0.9); border-color:rgba(255,77,158,0.55); }
+
+  #hint {
+    position:fixed; bottom:1.2rem; left:50%; transform:translateX(-50%); z-index:20;
+    font-family:'Cormorant Garamond',serif; font-size:clamp(0.62rem,2.4vw,0.76rem);
+    color:rgba(255,150,200,0.32); letter-spacing:0.14em; white-space:nowrap;
+    pointer-events:none; animation:hp 3s ease infinite;
+  }
+  @keyframes hp { 0%,100%{opacity:0.3} 50%{opacity:0.75} }
+
+  #loading {
+    position:fixed; inset:0; background:#000; z-index:100;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.2rem;
+    transition:opacity 1s ease;
+  }
+  #loading p { font-family:'Dancing Script',cursive; font-size:1.25rem; color:rgba(255,180,220,0.7); letter-spacing:0.1em; }
+  .spinner { width:34px; height:34px; border-radius:50%; border:2px solid rgba(255,77,158,0.15); border-top-color:rgba(255,77,158,0.9); animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div><p>Construyendo tu universo…</p></div>
+<canvas id="c"></canvas>
+
+<button id="backBtn" onclick="window.location.href='index.html'">
+  <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Volver
+</button>
+<div id="titleBar"><h1>Sistema Solar del Amor &nbsp;·&nbsp; Raquel &amp; Angel 🌌</h1></div>
+<button id="resetBtn">Centrar</button>
+<div id="hint">Arrastra para rotar · Pellizca / rueda para zoom</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+
+// ── Scene / Camera / Renderer ─────────────────────────────────────────────
+const scene    = new THREE.Scene();
+const camera   = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, 0.5, 6000);
+camera.position.set(0, 100, 300);
+
+const renderer = new THREE.WebGLRenderer({ canvas:document.getElementById('c'), antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.setClearColor(0x000000);
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ── Camera controller (spherical, no external dep) ───────────────────────
+const ctl = (() => {
+  let sph = { th:0.35, ph:1.15, r:290 };
+  let tgt = { ...sph };
+  let drag = false, lx = 0, ly = 0;
+  let auto = true;
+  const MIN = 45, MAX = 850;
+
+  const cam3 = s => ({
+    x: s.r * Math.sin(s.ph) * Math.sin(s.th),
+    y: s.r * Math.cos(s.ph),
+    z: s.r * Math.sin(s.ph) * Math.cos(s.th),
+  });
+
+  const clampPh = v => Math.max(0.06, Math.min(Math.PI - 0.06, v));
+  const clampR  = v => Math.max(MIN, Math.min(MAX, v));
+
+  // mouse
+  addEventListener('mousedown', e => {
+    if (e.target.closest('button')) return;
+    drag = true; auto = false; lx = e.clientX; ly = e.clientY;
+  });
+  addEventListener('mousemove', e => {
+    if (!drag) return;
+    tgt.th -= (e.clientX - lx) * 0.006;
+    tgt.ph  = clampPh(tgt.ph + (e.clientY - ly) * 0.006);
+    lx = e.clientX; ly = e.clientY;
+  });
+  addEventListener('mouseup', () => { drag = false; });
+  addEventListener('wheel', e => {
+    e.preventDefault();
+    tgt.r = clampR(tgt.r * (1 + e.deltaY * 0.001));
+    auto = false;
+  }, { passive:false });
+
+  // touch
+  let t0 = null, pd = 0, pr = 0;
+  addEventListener('touchstart', e => {
+    if (e.target.closest('button')) return;
+    auto = false;
+    if (e.touches.length === 1) {
+      drag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+      drag = false;
+      pd = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      pr = tgt.r;
+    }
+  }, { passive:true });
+  addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 1 && drag) {
+      tgt.th -= (e.touches[0].clientX - lx) * 0.007;
+      tgt.ph  = clampPh(tgt.ph + (e.touches[0].clientY - ly) * 0.007);
+      lx = e.touches[0].clientX; ly = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+      const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      tgt.r = clampR(pr * pd / d);
+    }
+  }, { passive:false });
+  addEventListener('touchend', e => {
+    if (e.touches.length === 0) drag = false;
+    if (e.touches.length === 1) { drag = true; lx = e.touches[0].clientX; ly = e.touches[0].clientY; }
+  }, { passive:true });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    tgt = { th:0.35, ph:1.15, r:290 }; auto = true;
+  });
+
+  return {
+    update(dt) {
+      if (auto) tgt.th += 0.00016 * dt;
+      sph.th += (tgt.th - sph.th) * 0.075;
+      sph.ph += (tgt.ph - sph.ph) * 0.075;
+      sph.r  += (tgt.r  - sph.r)  * 0.085;
+      const p = cam3(sph);
+      camera.position.set(p.x, p.y, p.z);
+      camera.lookAt(0, 0, 0);
+    }
+  };
+})();
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function offscreen(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  return [c, c.getContext('2d')];
+}
+
+function glowSprite(radius, stopA, stopB, opacity) {
+  const sz = 256;
+  const [c, cx] = offscreen(sz, sz);
+  const gr = cx.createRadialGradient(sz/2,sz/2,0,sz/2,sz/2,sz/2);
+  gr.addColorStop(0, stopA); gr.addColorStop(1, stopB);
+  cx.fillStyle = gr; cx.fillRect(0,0,sz,sz);
+  const mat = new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(c),
+    transparent:true, opacity, depthWrite:false,
+    blending: THREE.AdditiveBlending,
+  });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(radius, radius, 1);
+  return sp;
+}
+
+// ── Sun ───────────────────────────────────────────────────────────────────
+const sunCore = new THREE.Mesh(
+  new THREE.SphereGeometry(13, 64, 64),
+  new THREE.MeshBasicMaterial({ color:0xffffff })
+);
+scene.add(sunCore);
+sunCore.add(glowSprite(180, 'rgba(255,255,255,0.95)', 'rgba(255,200,240,0)', 0.75));
+sunCore.add(glowSprite(340, 'rgba(255,190,230,0.40)', 'rgba(0,0,0,0)',       0.55));
+sunCore.add(glowSprite(560, 'rgba(255,110,190,0.12)', 'rgba(0,0,0,0)',       0.40));
+
+const sunPt = new THREE.PointLight(0xffeeff, 1.5, 1400);
+scene.add(sunPt);
+scene.add(new THREE.AmbientLight(0x110015, 1.0));
+
+// ── Orbit definitions (radius + 3D tilt) ─────────────────────────────────
+const ORBS = [
+  { r: 50,  tilt: new THREE.Euler( 0.55,  0.00,  0.25) },
+  { r: 78,  tilt: new THREE.Euler(-0.68,  0.30,  0.15) },
+  { r: 110, tilt: new THREE.Euler( 0.38, -0.45,  0.42) },
+  { r: 146, tilt: new THREE.Euler(-0.25,  0.62,  0.18) },
+  { r: 186, tilt: new THREE.Euler( 0.78,  0.15, -0.30) },
+  { r: 230, tilt: new THREE.Euler(-0.46, -0.30,  0.55) },
+];
+
+// Draw orbit rings
+ORBS.forEach(orb => {
+  const pts = [];
+  for (let i = 0; i <= 128; i++) {
+    const a = (i/128) * Math.PI * 2;
+    pts.push(new THREE.Vector3(Math.cos(a)*orb.r, 0, Math.sin(a)*orb.r));
+  }
+  const line = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({ color:0xff55aa, transparent:true, opacity:0.13, depthWrite:false })
+  );
+  line.rotation.copy(orb.tilt);
+  scene.add(line);
+  orb.lineObj = line;
+});
+
+// ── Love words ────────────────────────────────────────────────────────────
+const WORDS = [
+  { o:0, t:'Te Amo con todo mi amor',               s:0.00052, a:0 },
+  { o:0, t:'Mi Moshita Hermosa',                s:0.00052, a:Math.PI },
+  { o:1, t:'Eres mi Todo',         s:0.00036, a:0.5 },
+  { o:1, t:'Te Quiero conmigo siempre',            s:0.00036, a:Math.PI*0.67+0.5 },
+  { o:1, t:'Eres Mi Mundo',             s:0.00036, a:Math.PI*1.34+0.5 },
+  { o:2, t:'Love Forever',         s:0.00025, a:1.0 },
+  { o:2, t:'Raquel & Angel',       s:0.00025, a:Math.PI*0.67+1.0 },
+  { o:2, t:'Siempre Juntos',       s:0.00025, a:Math.PI*1.34+1.0 },
+  { o:3, t:'Abrazos y Besos',      s:0.00017, a:0.2 },
+  { o:3, t:'Mi Corazón',           s:0.00017, a:Math.PI*0.5+0.2 },
+  { o:3, t:'Quiero Todo Contigo',  s:0.00017, a:Math.PI+0.2 },
+  { o:3, t:'Eres mi Paz',          s:0.00017, a:Math.PI*1.5+0.2 },
+  { o:4, t:'Infinitamente',        s:0.00011, a:0.7 },
+  { o:4, t:'Mi Mariposa',          s:0.00011, a:Math.PI*0.4+0.7 },
+  { o:4, t:'Feliz Cumpleaños',     s:0.00011, a:Math.PI*0.8+0.7 },
+  { o:4, t:'Mi Alegría',           s:0.00011, a:Math.PI*1.2+0.7 },
+  { o:4, t:'Para Siempre',         s:0.00011, a:Math.PI*1.6+0.7 },
+  { o:5, t:'Eres Especial',        s:0.000075, a:0.1 },
+  { o:5, t:'Mi Sueño Real',        s:0.000075, a:Math.PI*0.33+0.1 },
+  { o:5, t:'Amor Eterno',          s:0.000075, a:Math.PI*0.66+0.1 },
+  { o:5, t:'Raquel Vela',          s:0.000075, a:Math.PI+0.1 },
+  { o:5, t:'Eres Mi Universo',          s:0.000075, a:Math.PI*1.33+0.1 },
+  { o:5, t:'Contigo Todo',         s:0.000075, a:Math.PI*1.66+0.1 },
+];
+
+const FS   = [56, 48, 42, 36, 31, 27]; // canvas px font sizes per orbit
+const ALPHA = [0.96, 0.88, 0.82, 0.75, 0.68, 0.60];
+
+function wordSprite(text, oi) {
+  const fs   = FS[oi];
+  const font = `300 italic ${fs}px 'Cormorant Garamond', serif`;
+  const [tmp, tmx] = offscreen(4, 4);
+  tmx.font = font;
+  const tw  = tmx.measureText(text).width;
+  const pad = 22;
+  const cw  = Math.ceil(tw) + pad * 2;
+  const ch  = fs + pad * 2;
+  const [c, cx] = offscreen(cw, ch);
+  cx.font          = font;
+  cx.textAlign     = 'center';
+  cx.textBaseline  = 'middle';
+  cx.shadowColor   = 'rgba(255,120,200,0.9)';
+  cx.shadowBlur    = 20;
+  cx.fillStyle     = `rgba(255,245,255,${ALPHA[oi]})`;
+  cx.fillText(text, cw/2, ch/2);
+  cx.shadowBlur = 0;
+  cx.strokeStyle = `rgba(255,180,230,${ALPHA[oi]*0.15})`;
+  cx.lineWidth = 0.5;
+  cx.strokeText(text, cw/2, ch/2);
+
+  const mat = new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(c),
+    transparent:true, depthWrite:false,
+    blending: THREE.AdditiveBlending,
+  });
+  const sp  = new THREE.Sprite(mat);
+  const wh  = 7.5 - oi * 0.4; // world-space height
+  sp.scale.set(wh * (cw/ch), wh, 1);
+  return sp;
+}
+
+const wordObjs = WORDS.map(w => {
+  const sp = wordSprite(w.t, w.o);
+  scene.add(sp);
+  return { ...w, sp, cur: w.a };
+});
+
+// ── Stars ─────────────────────────────────────────────────────────────────
+(function() {
+  const N   = 3500;
+  const pos = new Float32Array(N*3);
+  const col = new Float32Array(N*3);
+  const sz  = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const th = Math.random()*Math.PI*2;
+    const ph = Math.acos(2*Math.random()-1);
+    const r  = 600 + Math.random()*2200;
+    pos[i*3]   = r*Math.sin(ph)*Math.cos(th);
+    pos[i*3+1] = r*Math.sin(ph)*Math.sin(th);
+    pos[i*3+2] = r*Math.cos(ph);
+    const pink = Math.random() < 0.3;
+    col[i*3]   = pink ? 1.0 : 0.92;
+    col[i*3+1] = pink ? 0.5 : 0.85;
+    col[i*3+2] = pink ? 0.78 : 1.0;
+    sz[i] = Math.random()*2.2+0.5;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(col,3));
+  const mat = new THREE.PointsMaterial({
+    vertexColors:true, size:1.6, sizeAttenuation:false,
+    transparent:true, opacity:0.88, depthWrite:false,
+    blending: THREE.AdditiveBlending,
+  });
+  scene.add(new THREE.Points(geo, mat));
+})();
+
+// ── Inner dust particles ──────────────────────────────────────────────────
+(function() {
+  const N   = 700;
+  const pos = new Float32Array(N*3);
+  const col = new Float32Array(N*3);
+  for (let i = 0; i < N; i++) {
+    const th = Math.random()*Math.PI*2;
+    const ph = Math.acos(2*Math.random()-1);
+    const r  = 55 + Math.random()*260;
+    pos[i*3]   = r*Math.sin(ph)*Math.cos(th);
+    pos[i*3+1] = r*Math.sin(ph)*Math.sin(th);
+    pos[i*3+2] = r*Math.cos(ph);
+    col[i*3]   = 1.0; col[i*3+1] = 0.65; col[i*3+2] = 0.9;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(col,3));
+  scene.add(new THREE.Points(geo, new THREE.PointsMaterial({
+    vertexColors:true, size:1.4, sizeAttenuation:true,
+    transparent:true, opacity:0.45, depthWrite:false,
+    blending: THREE.AdditiveBlending,
+  })));
+})();
+
+// ── Nebula clouds ─────────────────────────────────────────────────────────
+[
+  { p:[190,-55,85],  c:'rgba(255,50,155,0.20)',  r:150 },
+  { p:[-170,80,-110],c:'rgba(160,55,255,0.13)', r:170 },
+  { p:[90,160,-75],  c:'rgba(255,90,195,0.11)',  r:130 },
+  { p:[-130,-120,95],c:'rgba(255,130,215,0.10)', r:140 },
+  { p:[0, -180, 20], c:'rgba(200,80,255,0.09)',  r:120 },
+].forEach(n => {
+  const [c,cx] = offscreen(256,256);
+  const gr = cx.createRadialGradient(128,128,0,128,128,128);
+  gr.addColorStop(0, n.c); gr.addColorStop(1,'rgba(0,0,0,0)');
+  cx.fillStyle = gr; cx.fillRect(0,0,256,256);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(c),
+    transparent:true, depthWrite:false,
+    blending: THREE.AdditiveBlending,
+  }));
+  sp.position.set(...n.p);
+  sp.scale.set(n.r*2.2, n.r*2.2, 1);
+  scene.add(sp);
+});
+
+// ── Scene background ──────────────────────────────────────────────────────
+renderer.setClearColor(0x03000a, 1);
+
+// ── Render loop ───────────────────────────────────────────────────────────
+const tmp3 = new THREE.Vector3();
+const euler = new THREE.Euler();
+let prev = 0;
+
+function animate(ts) {
+  requestAnimationFrame(animate);
+  const dt = Math.min(ts - prev, 50); prev = ts;
+
+  ctl.update(dt);
+
+  // Sun pulse
+  const pulse = 1 + 0.045 * Math.sin(ts * 0.00095);
+  sunCore.scale.setScalar(pulse);
+  sunPt.intensity = 1.3 + 0.35 * Math.sin(ts * 0.00085);
+
+  // Update word positions along tilted orbits
+  wordObjs.forEach(w => {
+    w.cur += w.s * dt;
+    const orb = ORBS[w.o];
+    tmp3.set(Math.cos(w.cur) * orb.r, 0, Math.sin(w.cur) * orb.r);
+    tmp3.applyEuler(orb.tilt);
+    w.sp.position.copy(tmp3);
+
+    // Fade by distance for natural depth feeling
+    const d = camera.position.distanceTo(tmp3);
+    w.sp.material.opacity = Math.max(0.08, Math.min(1, 400 / d));
+  });
+
+  // Slowly rotate sun rays effect
+  sunCore.rotation.y = ts * 0.0002;
+
+  renderer.render(scene, camera);
+}
+
+// Hide loading screen
+const loadEl = document.getElementById('loading');
+loadEl.style.opacity = '0';
+setTimeout(() => loadEl.style.display = 'none', 1000);
+
+requestAnimationFrame(animate);
+
+})();
+</script>
+</body>
+</html>
