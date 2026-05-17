@@ -144,7 +144,7 @@ function activarMicrofono() {
         const volumenPromedio = values / length;
 
         // Umbral del soplido
-        if (volumenPromedio > 68) {
+        if (volumenPromedio > 35) {
           apagarVelasMágicas();
         }
       };
